@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import postgres from 'postgres';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
@@ -21,7 +22,7 @@ export async function createInvoice(formData: FormData) {
         amount: formData.get('amount'),
         status: formData.get('status'),
     });
-    const amountInCents = amount * 100;
+    const amountInCents = Math.round(amount * 100);
     const date = new Date().toISOString().split('T')[0];
     // Test it out:
     console.log({ customerId, amountInCents, status, date });
@@ -30,5 +31,6 @@ export async function createInvoice(formData: FormData) {
       INSERT INTO invoices (customer_id, amount, status, date)
       VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
     `;
+    revalidatePath('/dashboard/invoices');
 
 }
